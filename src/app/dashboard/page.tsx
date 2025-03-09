@@ -2,7 +2,7 @@
 'use client'
 
 import { useState } from 'react'
-import { usePosts, useCreatePost } from '@/hooks/use-posts'
+import { usePosts, useCreatePost, useDeletePost, CreatePostInput } from '@/hooks/use-posts'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import {
@@ -27,33 +27,11 @@ import { Skeleton } from '@/components/ui/skeleton'
 import { Toaster } from '@/components/ui/sonner'
 import { createContext, useContext, ReactNode } from 'react'
 import Link from 'next/link'
-
-
-interface Toast {
-    id: number
-    title: string
-    description: string
-    variant?: 'default' | 'destructive'
-}
-
-interface ToastContextType {
-    toasts: Toast[]
-    toast: (toast: Omit<Toast, 'id'>) => void
-    removeToast: (id: number) => void
-}
-
-const ToastContext = createContext<ToastContextType | undefined>(undefined)
-
-
-
-
-export const useToast = () => {
-    const context = useContext(ToastContext)
-    if (!context) {
-        throw new Error('useToast must be used within a ToastProvider')
-    }
-    return context
-}
+import { Textarea } from '@/components/ui/textarea'
+import { DialogClose } from '@radix-ui/react-dialog'
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@radix-ui/react-dropdown-menu'
+import { Edit, Eye, MoreVertical, Trash2 } from 'lucide-react'
+import { format } from 'date-fns'
 
 export const ToastProvider = ({ children }: { children: ReactNode }) => {
     const [toasts, setToasts] = useState<Toast[]>([])
@@ -87,28 +65,75 @@ export const ToastProvider = ({ children }: { children: ReactNode }) => {
     )
 }
 
+interface Toast {
+    id: number
+    title: string
+    description: string
+    variant?: 'default' | 'destructive'
+}
+
+interface ToastContextType {
+    toasts: Toast[]
+    toast: (toast: Omit<Toast, 'id'>) => void
+    removeToast: (id: number) => void
+}
+
+const ToastContext = createContext<ToastContextType | undefined>(undefined)
+
+export const useToast = () => {
+    const context = useContext(ToastContext)
+    if (!context) {
+        throw new Error('useToast must be used within a ToastProvider')
+    }
+    return context
+}
+
 export default function PostsDashboard() {
     const { data: posts, isLoading, isError } = usePosts()
     const createPostMutation = useCreatePost()
-    const [newPost, setNewPost] = useState({ title: '', body: '', userId: 1 })
-    const [open, setOpen] = useState(false)
+    const deletePostMutation = useDeletePost()
+    const [newPost, setNewPost] = useState<CreatePostInput>({
+        title: '',
+        body: '',
+        authorEmail: 'user@example.com',
+        authorName: 'Current User'
+    })
+    const [isDialogOpen, setIsDialogOpen] = useState(false)
     const { toast } = useToast()
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault()
         createPostMutation.mutate(newPost, {
             onSuccess: () => {
-                setOpen(false)
-                setNewPost({ title: '', body: '', userId: 1 })
+                setIsDialogOpen(false)
+                setNewPost({ title: '', body: '', authorEmail: 'user@example.com', authorName: 'Current User' })
                 toast({
                     title: "Success!",
                     description: "Your post has been created.",
                 })
             },
-            onError: () => {
+            onError: (error) => {
                 toast({
                     title: "Error",
-                    description: "Failed to create post. Please try again.",
+                    description: error.message || "Failed to create post. Please try again.",
+                    variant: "destructive",
+                })
+            }
+        })
+    }
+
+    const handleDelete = (id: number) => {
+        deletePostMutation.mutate(id, {
+            onSuccess: () => {
+                toast({
+                    title: "Deleted",
+                    description: "Post has been deleted successfully.",
+                })
+            },
+            onError: (error) => {
+                toast({
+                    title: "Error",
+                    description: error.message || "Failed to delete post.",
                     variant: "destructive",
                 })
             }
@@ -116,19 +141,20 @@ export default function PostsDashboard() {
     }
 
     if (isError) {
-        return <div>Error loading posts</div>
+        return <div className="container mx-auto py-8">Error loading posts</div>
     }
 
     return (
         <div className="container mx-auto py-8">
+
             <div className="flex justify-between items-center mb-6">
                 <h1 className="text-3xl font-bold">Posts Dashboard</h1>
 
-                <Dialog open={open} onOpenChange={setOpen}>
+                <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
                     <DialogTrigger asChild>
                         <Button>Create New Post</Button>
                     </DialogTrigger>
-                    <DialogContent>
+                    <DialogContent className="sm:max-w-[525px]">
                         <DialogHeader>
                             <DialogTitle>Create New Post</DialogTitle>
                             <DialogDescription>
@@ -149,16 +175,20 @@ export default function PostsDashboard() {
                                 </div>
                                 <div className="grid gap-2">
                                     <label htmlFor="body">Content</label>
-                                    <Input
+                                    <Textarea
                                         id="body"
                                         value={newPost.body}
                                         onChange={(e) => setNewPost({ ...newPost, body: e.target.value })}
+                                        rows={5}
                                         required
                                     />
                                 </div>
                             </div>
 
                             <DialogFooter>
+                                <DialogClose asChild>
+                                    <Button variant="outline">Cancel</Button>
+                                </DialogClose>
                                 <Button type="submit" disabled={createPostMutation.isPending}>
                                     {createPostMutation.isPending ? 'Saving...' : 'Save Post'}
                                 </Button>
@@ -176,34 +206,60 @@ export default function PostsDashboard() {
                         </div>
                     ))}
                 </div>
+            ) : posts?.length === 0 ? (
+                <div className="text-center py-12">
+                    <h3 className="text-lg font-medium">No posts found</h3>
+                    <p className="text-muted-foreground mt-2">Create your first post to get started.</p>
+                </div>
             ) : (
                 <Table>
                     <TableCaption>A list of your posts.</TableCaption>
                     <TableHeader>
                         <TableRow>
-                            <TableHead>ID</TableHead>
                             <TableHead>Title</TableHead>
-                            <TableHead>Content</TableHead>
+                            <TableHead>Created</TableHead>
+                            <TableHead>Author</TableHead>
+                            <TableHead>Status</TableHead>
+                            <TableHead className="w-[80px]"></TableHead>
                         </TableRow>
                     </TableHeader>
                     <TableBody>
                         {posts?.map((post) => (
                             <TableRow key={post.id}>
-
+                                <TableCell className="font-medium">{post.title}</TableCell>
+                                <TableCell>{post.createdAt ? format(new Date(post.createdAt), 'MMM dd, yyyy') : 'N/A'}</TableCell>
+                                <TableCell>{post.author?.name || 'Anonymous'}</TableCell>
+                                <TableCell>{post.published ? 'Published' : 'Draft'}</TableCell>
                                 <TableCell>
-                                    <Link href={`/dashboard/${post.id}`}>
-                                        {post.id}
-                                    </Link>
-                                </TableCell>
-                                <TableCell className="font-medium">
-                                    <Link href={`/dashboard/${post.id}`}>
-                                        {post.title}
-                                    </Link>
-                                </TableCell>
-                                <TableCell className="truncate max-w-xs">
-                                    <Link href={`/dashboard/${post.id}`}>
-                                        {post.body}
-                                    </Link>
+                                    <DropdownMenu>
+                                        <DropdownMenuTrigger asChild>
+                                            <Button variant="ghost" size="icon">
+                                                <MoreVertical className="h-4 w-4" />
+                                                <span className="sr-only">Open menu</span>
+                                            </Button>
+                                        </DropdownMenuTrigger>
+                                        <DropdownMenuContent align="end">
+                                            <DropdownMenuItem asChild>
+                                                <Link href={`/dashboard/posts/${post.id}`}>
+                                                    <Eye className="mr-2 h-4 w-4" />
+                                                    <span>View</span>
+                                                </Link>
+                                            </DropdownMenuItem>
+                                            <DropdownMenuItem asChild>
+                                                <Link href={`/dashboard/posts/${post.id}/edit`}>
+                                                    <Edit className="mr-2 h-4 w-4" />
+                                                    <span>Edit</span>
+                                                </Link>
+                                            </DropdownMenuItem>
+                                            <DropdownMenuItem
+                                                onClick={() => handleDelete(post.id)}
+                                                className="text-destructive focus:text-destructive"
+                                            >
+                                                <Trash2 className="mr-2 h-4 w-4" />
+                                                <span>Delete</span>
+                                            </DropdownMenuItem>
+                                        </DropdownMenuContent>
+                                    </DropdownMenu>
                                 </TableCell>
                             </TableRow>
                         ))}
