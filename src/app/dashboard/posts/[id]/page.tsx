@@ -1,25 +1,23 @@
 // app/dashboard/posts/[id]/page.tsx
 'use client'
 
+import { use } from 'react'
 import { usePost } from '@/hooks/use-posts'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
-import { MainNav } from '@/components/nav'
 import { format } from 'date-fns'
 import { ArrowLeft, Edit } from 'lucide-react'
 import Link from 'next/link'
 
-export default function PostDetailPage({ params }: { params: { id: string } }) {
-    const id = parseInt(params.id)
-    const { data: post, isLoading, isError } = usePost(id)
+export default function PostDetailPage({ params }: { params: Promise<{ id: string }> }) {
+    const { id } = use(params)
+    const postId = parseInt(id)
+    const { data: post, isLoading, isError } = usePost(postId)
 
     if (isLoading) {
         return (
             <div className="container mx-auto py-8">
-                <div className="border-b pb-4 mb-6">
-                    <MainNav />
-                </div>
                 <div className="space-y-4">
                     <Skeleton className="h-10 w-3/4" />
                     <Skeleton className="h-6 w-1/2" />
@@ -32,9 +30,6 @@ export default function PostDetailPage({ params }: { params: { id: string } }) {
     if (isError || !post) {
         return (
             <div className="container mx-auto py-8">
-                <div className="border-b pb-4 mb-6">
-                    <MainNav />
-                </div>
                 <Card>
                     <CardContent className="pt-6">
                         <div className="text-center py-8">
@@ -55,10 +50,6 @@ export default function PostDetailPage({ params }: { params: { id: string } }) {
 
     return (
         <div className="container mx-auto py-8">
-            <div className="border-b pb-4 mb-6">
-                <MainNav />
-            </div>
-
             <div className="flex items-center justify-between mb-6">
                 <Button variant="outline" asChild>
                     <Link href="/dashboard">
@@ -68,7 +59,7 @@ export default function PostDetailPage({ params }: { params: { id: string } }) {
                 </Button>
 
                 <Button asChild>
-                    <Link href={`/dashboard/posts/${id}/edit`}>
+                    <Link href={`/dashboard/posts/${postId}/edit`}>
                         <Edit className="mr-2 h-4 w-4" />
                         Edit Post
                     </Link>

@@ -2,7 +2,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { useRouter } from 'next/navigation'
+import { useRouter, useParams } from 'next/navigation'
 import { usePost, useUpdatePost, type Post } from '@/hooks/use-posts'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -12,14 +12,14 @@ import { Skeleton } from '@/components/ui/skeleton'
 import { Switch } from '@/components/ui/switch'
 import { Label } from '@/components/ui/label'
 
-import { MainNav } from '@/components/nav'
 import { ArrowLeft, Save } from 'lucide-react'
 import Link from 'next/link'
 import { useToast } from '@/app/dashboard/page'
 import { Toaster } from '@/components/ui/sonner'
 
-export default function EditPostPage({ params }: { params: { id: string } }) {
-    const id = parseInt(params.id)
+export default function EditPostPage() {
+    const params = useParams()
+    const id = params.id ? parseInt(params.id as string) : NaN
     const router = useRouter()
     const { data: post, isLoading, isError } = usePost(id)
     const updatePostMutation = useUpdatePost()
@@ -68,9 +68,6 @@ export default function EditPostPage({ params }: { params: { id: string } }) {
     if (isLoading) {
         return (
             <div className="container mx-auto py-8">
-                <div className="border-b pb-4 mb-6">
-                    <MainNav />
-                </div>
                 <div className="space-y-4">
                     <Skeleton className="h-10 w-1/2" />
                     <Skeleton className="h-12 w-full" />
@@ -84,9 +81,6 @@ export default function EditPostPage({ params }: { params: { id: string } }) {
     if (isError || !post) {
         return (
             <div className="container mx-auto py-8">
-                <div className="border-b pb-4 mb-6">
-                    <MainNav />
-                </div>
                 <Card>
                     <CardContent className="pt-6">
                         <div className="text-center py-8">
@@ -107,9 +101,6 @@ export default function EditPostPage({ params }: { params: { id: string } }) {
 
     return (
         <div className="container mx-auto py-8">
-            <div className="border-b pb-4 mb-6">
-                <MainNav />
-            </div>
 
             <div className="mb-6">
                 <Button variant="outline" asChild>

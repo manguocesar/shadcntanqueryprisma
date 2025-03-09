@@ -34,7 +34,6 @@ export default function RootLayout({
         <QueryProvider>
           <ToastProvider>
             <MainNav />
-
             {children}
           </ToastProvider>
         </QueryProvider>
