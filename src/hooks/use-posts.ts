@@ -36,7 +36,7 @@ export function useUpdatePost() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ id, ...data }: { id: number; data: Partial<Post> }) =>
+    mutationFn: ({ id, data }: { id: number; data: Partial<Post> }) =>
       trpc.updatePost.mutate({ id, data }),
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ["posts"] });

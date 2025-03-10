@@ -1,7 +1,7 @@
 import { initTRPC } from "@trpc/server";
 import { z } from "zod";
 import { PrismaClient } from "@prisma/client";
-import { PostSchema, CreatePostInputSchema } from "./schemas";
+import { CreatePostInputSchema } from "./schemas";
 
 const prisma = new PrismaClient();
 
@@ -9,11 +9,13 @@ const t = initTRPC.create();
 
 export const appRouter = t.router({
   getPosts: t.procedure.query(async () => {
-    console.log("posts");
     const posts = await prisma.post.findMany({
-      include: { author: { select: { name: true } } },
+      include: {
+        author: {
+          select: { name: true, email: true },
+        },
+      },
     });
-
     return posts;
   }),
 
@@ -35,10 +37,17 @@ export const appRouter = t.router({
         data: {
           title: input.title,
           body: input.body,
+          field: input.field,
+          authorEmail: input.authorEmail,
           author: input.authorEmail
             ? { connect: { email: input.authorEmail } }
             : input.authorName
-            ? { create: { name: input.authorName } }
+            ? {
+                create: {
+                  name: input.authorName,
+                  email: input.authorEmail || "",
+                },
+              }
             : undefined,
         },
       });
@@ -53,6 +62,8 @@ export const appRouter = t.router({
           title: z.string().optional(),
           body: z.string().optional(),
           published: z.boolean().optional(),
+          field: z.string().optional(),
+          authorEmail: z.string().optional(),
         }),
       })
     )
