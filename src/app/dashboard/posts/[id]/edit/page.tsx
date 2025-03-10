@@ -3,7 +3,7 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter, useParams } from 'next/navigation'
-import { usePost, useUpdatePost, type Post } from '@/hooks/use-posts'
+import { usePost, useUpdatePost } from '@/hooks/use-posts'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
@@ -16,6 +16,7 @@ import { ArrowLeft, Save } from 'lucide-react'
 import Link from 'next/link'
 import { useToast } from '@/app/dashboard/page'
 import { Toaster } from '@/components/ui/sonner'
+import { Post } from '@prisma/client'
 
 export default function EditPostPage() {
     const params = useParams()
@@ -28,6 +29,8 @@ export default function EditPostPage() {
     const [formData, setFormData] = useState<Partial<Post>>({
         title: '',
         body: '',
+        field: '',
+        authorEmail: '',
         published: false
     })
 
@@ -36,6 +39,8 @@ export default function EditPostPage() {
             setFormData({
                 title: post.title,
                 body: post.body,
+                field: post.field || '',
+                authorEmail: post.authorEmail || '',
                 published: post.published
             })
         }
@@ -43,9 +48,8 @@ export default function EditPostPage() {
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault()
-
         updatePostMutation.mutate(
-            { id, ...formData },
+            { id, data: formData },
             {
                 onSuccess: () => {
                     toast({
@@ -133,6 +137,26 @@ export default function EditPostPage() {
                                 id="body"
                                 value={formData.body}
                                 onChange={(e) => setFormData({ ...formData, body: e.target.value })}
+                                rows={10}
+                                required
+                            />
+                        </div>
+                        <div className="grid gap-2">
+                            <Label htmlFor="field">Field</Label>
+                            <Textarea
+                                id="field"
+                                value={formData.field ?? ''} // Use nullish coalescing to show empty string if null
+                                onChange={(e) => setFormData({ ...formData, field: e.target.value })}
+                                rows={10}
+                                required
+                            />
+                        </div>
+                        <div className="grid gap-2">
+                            <Label htmlFor="authorEmail">Author Email</Label>
+                            <Textarea
+                                id="authorEmail"
+                                value={formData.authorEmail ?? ''} // Use nullish coalescing to show empty string if null
+                                onChange={(e) => setFormData({ ...formData, authorEmail: e.target.value })}
                                 rows={10}
                                 required
                             />

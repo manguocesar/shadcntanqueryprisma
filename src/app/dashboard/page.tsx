@@ -2,7 +2,7 @@
 'use client'
 
 import { useState } from 'react'
-import { usePosts, useCreatePost, useDeletePost, CreatePostInput } from '@/hooks/use-posts'
+import { usePosts, useCreatePost, useDeletePost } from '@/hooks/use-posts'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import {
@@ -32,6 +32,7 @@ import { DialogClose } from '@radix-ui/react-dialog'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@radix-ui/react-dropdown-menu'
 import { Edit, Eye, MoreVertical, Trash2 } from 'lucide-react'
 import { format } from 'date-fns'
+import { CreatePostInput } from '@/lib/schemas'
 
 export const ToastProvider = ({ children }: { children: ReactNode }) => {
     const [toasts, setToasts] = useState<Toast[]>([])
@@ -95,6 +96,7 @@ export default function PostsDashboard() {
     const [newPost, setNewPost] = useState<CreatePostInput>({
         title: '',
         body: '',
+        field: '',
         authorEmail: 'user@example.com',
         authorName: 'Current User'
     })
@@ -106,7 +108,7 @@ export default function PostsDashboard() {
         createPostMutation.mutate(newPost, {
             onSuccess: () => {
                 setIsDialogOpen(false)
-                setNewPost({ title: '', body: '', authorEmail: 'user@example.com', authorName: 'Current User' })
+                setNewPost({ title: '', body: '', field: '', authorEmail: 'user@example.com', authorName: 'Current User' })
                 toast({
                     title: "Success!",
                     description: "Your post has been created.",
@@ -179,6 +181,26 @@ export default function PostsDashboard() {
                                         id="body"
                                         value={newPost.body}
                                         onChange={(e) => setNewPost({ ...newPost, body: e.target.value })}
+                                        rows={5}
+                                        required
+                                    />
+                                </div>
+                                <div className="grid gap-2">
+                                    <label htmlFor="field">Field</label>
+                                    <Textarea
+                                        id="field"
+                                        value={newPost.field}
+                                        onChange={(e) => setNewPost({ ...newPost, field: e.target.value })}
+                                        rows={5}
+                                        required
+                                    />
+                                </div>
+                                <div className="grid gap-2">
+                                    <label htmlFor="authorEmail">Field</label>
+                                    <Textarea
+                                        id="authorEmail"
+                                        value={newPost.authorEmail}
+                                        onChange={(e) => setNewPost({ ...newPost, authorEmail: e.target.value })}
                                         rows={5}
                                         required
                                     />

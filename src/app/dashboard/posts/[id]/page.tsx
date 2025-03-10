@@ -15,6 +15,7 @@ export default function PostDetailPage({ params }: { params: Promise<{ id: strin
     const postId = parseInt(id)
     const { data: post, isLoading, isError } = usePost(postId)
 
+
     if (isLoading) {
         return (
             <div className="container mx-auto py-8">
@@ -80,6 +81,8 @@ export default function PostDetailPage({ params }: { params: Promise<{ id: strin
                 <CardContent>
                     <div className="prose max-w-none">
                         <p className="whitespace-pre-line">{post.body}</p>
+                        <p className="whitespace-pre-line">{post.field}</p>
+                        <p className="whitespace-pre-line">{post.authorEmail}</p>
                     </div>
                 </CardContent>
             </Card>
