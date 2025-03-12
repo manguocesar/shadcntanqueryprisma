@@ -1,7 +1,16 @@
 'use client';
 import { useEffect } from 'react';
 import { useParams } from 'next/navigation';
-import { usePost } from '@/hooks/use-posts';
+import { usePost, usePosts } from '@/hooks/use-posts';
+
+export async function generateStaticParams() {
+    const { data: posts } = usePosts();
+    const ids = posts ? posts.map((post: { id: number }) => post.id) : [];
+    return ids.map((id: number) => ({
+        slug: id,
+    }));
+}
+
 
 const PostPage = () => {
 
